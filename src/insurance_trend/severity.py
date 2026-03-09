@@ -209,7 +209,7 @@ class SeverityTrendFitter:
         Superimposed inflation is the portion of severity trend that is NOT
         explained by the external economic index:
 
-            superimposed = total_trend - index_trend
+            superimposed = (1 + total_trend) / (1 + index_trend) - 1
 
         Returns ``None`` if no external index was provided or :meth:`fit` has
         not been called yet.
@@ -220,7 +220,9 @@ class SeverityTrendFitter:
         """
         if self._fitted_result is None or self._index_trend_rate is None:
             return None
-        return float(self._fitted_result.trend_rate - self._index_trend_rate)
+        s_total = self._fitted_result.trend_rate
+        s_index = self._index_trend_rate
+        return float((1.0 + s_total) / (1.0 + s_index) - 1.0)
 
     def _compute_index_trend_rate(self) -> float:
         """Fit a log-linear trend to the external index and return the annual rate."""
