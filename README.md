@@ -1,6 +1,13 @@
 # insurance-trend
 
+[![Tests](https://github.com/burning-cost/insurance-trend/actions/workflows/ci.yml/badge.svg)](https://github.com/burning-cost/insurance-trend/actions/workflows/ci.yml)
+[![PyPI version](https://badge.fury.io/py/insurance-trend.svg)](https://pypi.org/project/insurance-trend/)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 Loss cost trend analysis for UK personal lines insurance pricing.
+
+Blog post: [Loss Cost Trend Analysis in Python](https://burning-cost.github.io/2026/03/09/insurance-trend.html)
 
 ## The problem
 
