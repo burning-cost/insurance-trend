@@ -38,9 +38,9 @@ result = fitter.fit(
     seasonal=True,        # quarterly seasonal dummies
 )
 
-print(result.trend_rate)     # e.g. 0.085 — 8.5% pa loss cost trend
-print(result.decompose())    # freq_trend, sev_trend, superimposed
-fig = result.plot()          # 3-panel diagnostic figure
+print(result.combined_trend_rate)  # e.g. 0.085 — 8.5% pa loss cost trend
+print(result.decompose())          # freq_trend, sev_trend, superimposed
+fig = result.plot()                # 3-panel diagnostic figure
 ```
 
 ## Classes
