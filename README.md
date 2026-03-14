@@ -164,6 +164,7 @@ V1 does not include mix adjustment. If your portfolio composition has shifted (m
 
 This library is for pricing trend — forward projection of aggregate accident-period data. It is not a reserving tool. Use `chainladder-python` for triangle development to ultimate; use `insurance-trend` for what comes after.
 
+<<<<<<< Updated upstream
 ## Performance
 
 Benchmarked against a **fixed trend assumption** (last-12-quarters exposure-weighted OLS on loss cost, standard industry practice) on synthetic UK motor data — 24 quarters with a known structural break at Q13, analogous to a COVID-style frequency collapse combined with post-break severity acceleration. Dataset: quarterly aggregate experience with Poisson frequency noise and log-normal severity noise around a known DGP.
@@ -180,3 +181,13 @@ Benchmarked against a **fixed trend assumption** (last-12-quarters exposure-weig
 The improvement in trend bias is most pronounced when the structural break falls within the observation window and the pre- and post-break trend rates differ by more than 5 percentage points annually — the scenario the library was designed for. When experience is genuinely stable with no dislocations, the library produces a single segment and returns the same headline trend rate as the fixed approach, with the added benefit of a bootstrap confidence interval.
 
 Run `notebooks/benchmark.py` on Databricks to reproduce.
+=======
+## Related Libraries
+
+| Library | What it does |
+|---------|-------------|
+| [insurance-whittaker](https://github.com/burning-cost/insurance-whittaker) | Whittaker-Henderson graduation for development triangles — smooth the trends before forward projection |
+| [insurance-dynamics](https://github.com/burning-cost/insurance-dynamics) | Loss development models — trend projections inform the development assumptions in reserve models |
+| [insurance-causal-policy](https://github.com/burning-cost/insurance-causal-policy) | SDID causal evaluation of rate changes — separates genuine market trends from the effects of pricing actions |
+
+>>>>>>> Stashed changes
