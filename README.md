@@ -17,20 +17,55 @@ Currently this is done in Excel, SAS, or bespoke R scripts. There is no Python l
 
 The post-2021 inflationary environment has made this more urgent: UK motor claims inflation ran at 34% from 2019 to 2023 versus CPI of 21% — a 13 percentage point superimposed component that CPI alone does not capture. A library that cannot identify structural breaks (COVID lockdown, Ogden rate change) will produce misleading trend estimates.
 
-## What this library does
+## Quick start
 
 ```python
-from insurance_trend import LossCostTrendFitter, ExternalIndex
+import numpy as np
+from insurance_trend import LossCostTrendFitter
 
-# Fetch ONS motor repair index for severity deflation
-motor_repair_idx = ExternalIndex.from_ons('HPTH')
+# 24 quarters of UK motor aggregate experience data (2019 Q1 – 2024 Q4)
+# Synthetic: stable frequency pre-2021, then step-down (COVID recovery lag),
+# then gradual recovery. Severity accelerates post-2021 (repair cost inflation).
+rng = np.random.default_rng(42)
+n = 24
+
+periods = [
+    f"{yr}Q{q}"
+    for yr in range(2019, 2025)
+    for q in range(1, 5)
+]
+
+# Earned vehicle-years (growing book, slight seasonality)
+earned_vehicles = (
+    12_000
+    + np.arange(n) * 150
+    + rng.normal(0, 200, n)
+).clip(10_000, None)
+
+# True frequency: stable ~0.085 pre-2021, drops to ~0.065 in 2021 (COVID),
+# then recovers at +3% pa through 2024
+t = np.arange(n)
+freq_true = np.where(
+    t < 8,
+    0.085 + 0.001 * t,
+    0.065 * np.exp(0.007 * (t - 8)),  # post-COVID recovery trend
+)
+claim_counts = rng.poisson(freq_true * earned_vehicles).astype(float)
+
+# True severity: accelerates at +8% pa from 2022 (repair inflation)
+base_severity = 3_800.0
+sev_true = base_severity * np.where(
+    t < 12,
+    1.0 + 0.03 * t / 4,
+    (1.0 + 0.03) ** 3 * np.exp(0.08 * (t - 12) / 4),  # post-2022 inflation
+)
+total_paid = claim_counts * rng.lognormal(np.log(sev_true), 0.15)
 
 fitter = LossCostTrendFitter(
-    periods=df['accident_quarter'],
-    claim_counts=df['claim_count'],
-    earned_exposure=df['earned_vehicles'],
-    total_paid=df['paid_claims'],
-    external_index=motor_repair_idx,
+    periods=periods,
+    claim_counts=claim_counts,
+    earned_exposure=earned_vehicles,
+    total_paid=total_paid,
 )
 
 result = fitter.fit(
@@ -40,7 +75,26 @@ result = fitter.fit(
 
 print(result.combined_trend_rate)  # e.g. 0.085 — 8.5% pa loss cost trend
 print(result.decompose())          # freq_trend, sev_trend, superimposed
-fig = result.plot()                # 3-panel diagnostic figure
+print(result.summary())
+```
+
+With an ONS external index for severity deflation (requires network access):
+
+```python
+from insurance_trend import LossCostTrendFitter, ExternalIndex
+
+# Fetch ONS motor repair index (SPPI G4520, 2015=100)
+motor_repair_idx = ExternalIndex.from_ons('HPTH')
+
+fitter = LossCostTrendFitter(
+    periods=periods,
+    claim_counts=claim_counts,
+    earned_exposure=earned_vehicles,
+    total_paid=total_paid,
+    external_index=motor_repair_idx,  # deflates severity; superimposed_inflation() gives residual
+)
+result = fitter.fit(detect_breaks=True, seasonal=True)
+print(result.superimposed_inflation)  # trend component not explained by ONS index
 ```
 
 ## Classes
