@@ -165,6 +165,10 @@ V1 does not include mix adjustment. If your portfolio composition has shifted (m
 This library is for pricing trend — forward projection of aggregate accident-period data. It is not a reserving tool. Use `chainladder-python` for triangle development to ultimate; use `insurance-trend` for what comes after.
 
 <<<<<<< Updated upstream
+## Databricks Notebook
+
+A ready-to-run Databricks notebook benchmarking this library against standard approaches is available in [burning-cost-examples](https://github.com/burning-cost/burning-cost-examples/blob/main/notebooks/insurance_trend_demo.py).
+
 ## Performance
 
 Benchmarked against a **fixed trend assumption** (last-12-quarters exposure-weighted OLS on loss cost, standard industry practice) on synthetic UK motor data — 24 quarters with a known structural break at Q13, analogous to a COVID-style frequency collapse combined with post-break severity acceleration. Dataset: quarterly aggregate experience with Poisson frequency noise and log-normal severity noise around a known DGP.
