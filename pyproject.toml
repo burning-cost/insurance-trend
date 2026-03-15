@@ -49,6 +49,13 @@ dev = [
     "responses>=0.23",
 ]
 
+
+[project.urls]
+Homepage = "https://github.com/burning-cost/insurance-trend"
+Repository = "https://github.com/burning-cost/insurance-trend"
+"Bug Tracker" = "https://github.com/burning-cost/insurance-trend/issues"
+Documentation = "https://github.com/burning-cost/insurance-trend#readme"
+
 [tool.hatch.build.targets.wheel]
 packages = ["src/insurance_trend"]
 
