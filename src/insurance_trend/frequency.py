@@ -285,7 +285,11 @@ class FrequencyTrendFitter:
         last_r_sq = 0.0
         for seg_t, seg_y in segments:
             idx = seg_t.astype(int)
-            X = _build_design_matrix(np.arange(len(seg_t), dtype=float), seasonal, self._periods_per_year)
+            # P0-3 fix: pass seg_t (global time indices) so that quarterly seasonal
+            # dummies carry the correct calendar phase. Using np.arange(len(seg_t))
+            # would reset Q1 to the start of every segment, regardless of the
+            # actual calendar quarter.
+            X = _build_design_matrix(seg_t, seasonal, self._periods_per_year)
             import statsmodels.api as sm
             res = sm.OLS(seg_y, X).fit()
             fitted_full[idx] = res.fittedvalues
@@ -306,10 +310,26 @@ class FrequencyTrendFitter:
         """Parametric bootstrap: resample residuals, refit, collect slope distribution."""
         import statsmodels.api as sm
 
-        X = _build_design_matrix(t, seasonal, self._periods_per_year)
-        res = sm.OLS(log_y, X).fit()
-        residuals = log_y - res.fittedvalues
-        fitted = res.fittedvalues
+        # P0-2 fix: compute residuals from the correct model. When breaks exist,
+        # use piecewise fit residuals. Full-series OLS residuals in the piecewise
+        # case are ~37x larger, making CIs ~37x too wide.
+        if breaks:
+            segments = split_segments(t, log_y, breaks)
+            fitted_full = np.empty_like(log_y)
+            for seg_t, seg_y in segments:
+                idx = seg_t.astype(int)
+                # P0-3 fix applied here too.
+                X_s = _build_design_matrix(seg_t, seasonal, self._periods_per_year)
+                r = sm.OLS(seg_y, X_s).fit()
+                fitted_full[idx] = r.fittedvalues
+            residuals = log_y - fitted_full
+            fitted = fitted_full
+        else:
+            X = _build_design_matrix(t, seasonal, self._periods_per_year)
+            res = sm.OLS(log_y, X).fit()
+            residuals = log_y - res.fittedvalues
+            fitted = res.fittedvalues
+
         rng = np.random.default_rng(42)
         boot_rates = []
         for _ in range(n_bootstrap):
@@ -318,13 +338,15 @@ class FrequencyTrendFitter:
                 segs = split_segments(t, boot_log_y, breaks)
                 last_beta = 0.0
                 for seg_t, seg_y in segs:
+                    # P0-3 fix: use seg_t for global seasonal phase in bootstrap.
                     X_s = _build_design_matrix(
-                        np.arange(len(seg_t), dtype=float), seasonal, self._periods_per_year
+                        seg_t, seasonal, self._periods_per_year
                     )
                     r = sm.OLS(seg_y, X_s).fit()
                     last_beta = float(r.params[1])
                 boot_rates.append(annual_trend_rate(last_beta, self._periods_per_year))
             else:
+                X = _build_design_matrix(t, seasonal, self._periods_per_year)
                 r = sm.OLS(boot_log_y, X).fit()
                 boot_rates.append(annual_trend_rate(float(r.params[1]), self._periods_per_year))
 
@@ -500,8 +522,22 @@ def _local_linear_bootstrap_ci(
     fitted = np.asarray(res_base.fittedvalues)
     residuals = log_y - fitted
     rng = np.random.default_rng(42)
+
+    # P1-2 fix: cap at 200 for local linear (each fit is slow), but warn the
+    # caller so they understand the CI precision may be reduced.
+    cap = 200
+    if n_bootstrap > cap:
+        warnings.warn(
+            f"Local linear trend bootstrap capped at {cap} replicates "
+            f"(requested {n_bootstrap}). Each UnobservedComponents fit is slow; "
+            "use method='log_linear' if you need higher bootstrap N.",
+            UserWarning,
+            stacklevel=4,
+        )
+        n_bootstrap = cap
+
     boot_rates = []
-    for _ in range(min(n_bootstrap, 200)):  # cap at 200 for local linear — each fit is slower
+    for _ in range(n_bootstrap):
         boot_y = fitted + rng.choice(residuals, size=len(residuals), replace=True)
         try:
             r = UnobservedComponents(boot_y, level="local linear trend").fit(disp=False)

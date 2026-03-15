@@ -82,7 +82,8 @@ class TrendResult:
 
         Panel 1 — Actual vs Fitted values on the original scale.
         Panel 2 — Multiplicative residuals with a zero reference line.
-        Panel 3 — Forward projection fan (point estimate + 90 % and 95 % CI bands).
+        Panel 3 — Forward projection fan (point estimate + CI band at the
+        confidence level used during fitting, default 95 %).
 
         Returns
         -------

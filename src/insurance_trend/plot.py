@@ -20,7 +20,8 @@ def trend_diagnostic_plot(result: "TrendResult") -> "matplotlib.figure.Figure":
 
     Panel 1 — Actual vs Fitted values on the original scale.
     Panel 2 — Multiplicative residuals (actual/fitted - 1) with zero reference.
-    Panel 3 — Forward projection fan with 90 % and 95 % confidence intervals.
+    Panel 3 — Forward projection fan with a single CI band at the confidence
+    level used during fitting (default 95 %).
 
     Parameters
     ----------
@@ -95,9 +96,9 @@ def trend_diagnostic_plot(result: "TrendResult") -> "matplotlib.figure.Figure":
         ax3.plot(t_hist, fitted, "-", color="#d62728", linewidth=1.5, label="Fitted (historical)")
         ax3.plot(t_hist, actuals, "o", color="#1f77b4", markersize=4, label="Actual")
 
-        # Projection fan
+        # Projection fan — single CI band at the fitted confidence level
         ax3.plot(fwd_t, pt, "--", color="#d62728", linewidth=1.5, label="Projection")
-        ax3.fill_between(fwd_t, lo, hi, alpha=0.2, color="#d62728", label="95% CI")
+        ax3.fill_between(fwd_t, lo, hi, alpha=0.2, color="#d62728", label="CI band")
 
         # Bridge from last fitted to first projection
         bridge_t = [t_hist[-1], fwd_t[0]]
@@ -221,7 +222,7 @@ def _plot_projection(ax, result: "TrendResult", title: str) -> None:
 
     ax.plot(t_hist, fitted, "-", color="#d62728", linewidth=1.5)
     ax.plot(fwd_t, pt, "--", color="#d62728", linewidth=1.5, label="Point")
-    ax.fill_between(fwd_t, lo, hi, alpha=0.2, color="#d62728", label="95% CI")
+    ax.fill_between(fwd_t, lo, hi, alpha=0.2, color="#d62728", label="CI band")
     ax.axvline(n - 0.5, color="grey", linestyle="--", linewidth=0.8, alpha=0.5)
     ax.set_title(title, fontsize=9)
     ax.legend(fontsize=7)

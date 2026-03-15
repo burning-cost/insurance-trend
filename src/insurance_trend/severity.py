@@ -206,10 +206,10 @@ class SeverityTrendFitter:
     def superimposed_inflation(self) -> Optional[float]:
         """Return the superimposed inflation rate (annual).
 
-        Superimposed inflation is the portion of severity trend that is NOT
-        explained by the external economic index:
-
-            superimposed = (1 + total_trend) / (1 + index_trend) - 1
+        When an external index is provided, the fit is performed on
+        ``severity / index``. The trend of that deflated series IS the
+        superimposed inflation — the portion of severity growth not explained
+        by the external economic index.
 
         Returns ``None`` if no external index was provided or :meth:`fit` has
         not been called yet.
@@ -220,9 +220,9 @@ class SeverityTrendFitter:
         """
         if self._fitted_result is None or self._index_trend_rate is None:
             return None
-        s_total = self._fitted_result.trend_rate
-        s_index = self._index_trend_rate
-        return float((1.0 + s_total) / (1.0 + s_index) - 1.0)
+        # The fit was performed on severity / index, so _fitted_result.trend_rate
+        # already IS the superimposed inflation. No further deflation is needed.
+        return float(self._fitted_result.trend_rate)
 
     def _compute_index_trend_rate(self) -> float:
         """Fit a log-linear trend to the external index and return the annual rate."""
@@ -419,8 +419,9 @@ def _fit_piecewise_ols(
     last_r_sq = 0.0
     for seg_t, seg_y in segments:
         idx = seg_t.astype(int)
-        local_t = np.arange(len(seg_t), dtype=float)
-        X = _build_design_matrix(local_t, seasonal, periods_per_year)
+        # P0-3 fix: pass seg_t (global time indices) instead of local np.arange,
+        # so that quarterly seasonal dummies are assigned correct calendar phase.
+        X = _build_design_matrix(seg_t, seasonal, periods_per_year)
         res = sm.OLS(seg_y, X).fit()
         fitted_full[idx] = res.fittedvalues
         last_beta = float(res.params[1])
@@ -440,10 +441,26 @@ def _bootstrap_ci(
     """Parametric bootstrap CI for a log-linear (or piecewise) fit."""
     import statsmodels.api as sm
 
-    X = _build_design_matrix(t, seasonal, periods_per_year)
-    res = sm.OLS(log_y, X).fit()
-    residuals = log_y - np.asarray(res.fittedvalues)
-    fitted = np.asarray(res.fittedvalues)
+    # P0-2 fix: compute residuals from the correct model (piecewise when breaks
+    # exist, single OLS otherwise). Using full-series OLS residuals in the
+    # piecewise case inflates them ~37x and produces absurdly wide CIs.
+    if breaks:
+        segments = split_segments(t, log_y, breaks)
+        fitted_full = np.empty_like(log_y)
+        for seg_t, seg_y in segments:
+            idx = seg_t.astype(int)
+            # P0-3 fix applied here too: use seg_t for global seasonal phase.
+            X_s = _build_design_matrix(seg_t, seasonal, periods_per_year)
+            r = sm.OLS(seg_y, X_s).fit()
+            fitted_full[idx] = r.fittedvalues
+        residuals = log_y - fitted_full
+        fitted = fitted_full
+    else:
+        X = _build_design_matrix(t, seasonal, periods_per_year)
+        res = sm.OLS(log_y, X).fit()
+        residuals = log_y - np.asarray(res.fittedvalues)
+        fitted = np.asarray(res.fittedvalues)
+
     rng = np.random.default_rng(42)
     boot_rates = []
     for _ in range(n_bootstrap):
@@ -452,12 +469,13 @@ def _bootstrap_ci(
             segs = split_segments(t, boot_y, breaks)
             last_beta = 0.0
             for seg_t, seg_y in segs:
-                local_t = np.arange(len(seg_t), dtype=float)
-                X_s = _build_design_matrix(local_t, seasonal, periods_per_year)
+                # P0-3 fix: use seg_t for global seasonal phase in bootstrap too.
+                X_s = _build_design_matrix(seg_t, seasonal, periods_per_year)
                 r = sm.OLS(seg_y, X_s).fit()
                 last_beta = float(r.params[1])
             boot_rates.append(annual_trend_rate(last_beta, periods_per_year))
         else:
+            X = _build_design_matrix(t, seasonal, periods_per_year)
             r = sm.OLS(boot_y, X).fit()
             boot_rates.append(annual_trend_rate(float(r.params[1]), periods_per_year))
 
