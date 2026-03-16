@@ -164,28 +164,45 @@ V1 does not include mix adjustment. If your portfolio composition has shifted (m
 
 This library is for pricing trend — forward projection of aggregate accident-period data. It is not a reserving tool. Use `chainladder-python` for triangle development to ultimate; use `insurance-trend` for what comes after.
 
-<<<<<<< Updated upstream
 ## Databricks Notebook
 
 A ready-to-run Databricks notebook benchmarking this library against standard approaches is available in [burning-cost-examples](https://github.com/burning-cost/burning-cost-examples/blob/main/notebooks/insurance_trend_demo.py).
 
 ## Performance
 
-Benchmarked against a **fixed trend assumption** (last-12-quarters exposure-weighted OLS on loss cost, standard industry practice) on synthetic UK motor data — 24 quarters with a known structural break at Q13, analogous to a COVID-style frequency collapse combined with post-break severity acceleration. Dataset: quarterly aggregate experience with Poisson frequency noise and log-normal severity noise around a known DGP.
+Benchmarked against a naive OLS baseline (single log-linear trend across all 24 quarters, no break detection) on synthetic UK motor data — 24 quarters (2019 Q1 to 2024 Q4) with a known frequency break at Q8 and severity break at Q12. Results from `benchmarks/benchmark.py` run 2026-03-16.
 
-| Metric | Fixed trend (baseline) | insurance-trend | Notes |
-|--------|------------------------|-----------------|-------|
-| Loss cost trend bias vs DGP (pa) | blended pre/post-break | post-break only | lower is better; baseline blends two regimes |
-| Projection MAPE over +4 quarters | measured at runtime | measured at runtime | expected 10–25% improvement when break is recent |
-| Projection error at +4Q | measured at runtime | measured at runtime | expected 15–30% improvement |
-| Structural break detected | No | Yes (ruptures PELT) | to within ±2 quarters in a 24-quarter series |
-| Frequency/severity decomposition | No | Yes | enables separate loading in reinsurance pricing |
-| Fit time | <1s | <30s (500 bootstrap) | bootstrap dominates; reduce to 200 for exploration |
+**Trend rate accuracy (true post-break DGP rates: frequency +3.0% pa, severity +8.0% pa, loss cost +11.24% pa):**
 
-The improvement in trend bias is most pronounced when the structural break falls within the observation window and the pre- and post-break trend rates differ by more than 5 percentage points annually — the scenario the library was designed for. When experience is genuinely stable with no dislocations, the library produces a single segment and returns the same headline trend rate as the fixed approach, with the added benefit of a bootstrap confidence interval.
+| Component | True (DGP) | Naive OLS | insurance-trend | Naive error | Lib error |
+|-----------|-----------|-----------|-----------------|-------------|-----------|
+| Frequency | +3.000% | -5.152% | -5.353% | -8.152pp | -8.353pp |
+| Severity | +8.000% | +2.353% | +2.256% | -5.647pp | -5.744pp |
+| Loss cost | +11.240% | -2.921% | -3.217% | -14.161pp | -14.457pp |
 
-Run `notebooks/benchmark.py` on Databricks to reproduce.
-=======
+**Break detection (24-quarter series):**
+
+| Component | True break | Detected | Within ±2Q? |
+|-----------|-----------|---------|-------------|
+| Frequency | Q8 | none | No break detected |
+| Severity | Q12 | none | No break detected |
+
+**4-quarter forward projection MAPE:**
+
+| Method | Loss cost MAPE |
+|--------|---------------|
+| Naive OLS | 29.99% |
+| insurance-trend | **26.06%** |
+| Improvement | 3.93 pp |
+
+On this benchmark, both models produce similar trend rate estimates because the break detection did not fire — the 24-quarter series and noise level did not exceed the PELT penalty threshold. The library's value here is the 3.9 pp projection MAPE improvement and the bootstrap CI (frequency CI: −7.3% to −3.2%), which the naive OLS does not produce.
+
+Break detection is most reliable when: (a) the series is longer (30+ periods), (b) the break is large (>10pp in rate), or (c) the penalty parameter is reduced. Pass `changepoints=[8, 12]` to impose known break locations when the dates are known from external events (e.g. COVID lockdown, Ogden rate change).
+
+The library's structural value is the frequency/severity decomposition: the naive OLS produces one blended loss cost trend and cannot separate -5.2pp frequency from +2.4pp severity. The decomposition feeds separately into pricing rate change and reinsurance attachment calculations.
+
+Run `benchmarks/benchmark.py` on Databricks to reproduce.
+
 ## Related Libraries
 
 | Library | What it does |
@@ -194,4 +211,3 @@ Run `notebooks/benchmark.py` on Databricks to reproduce.
 | [insurance-dynamics](https://github.com/burning-cost/insurance-dynamics) | Loss development models — trend projections inform the development assumptions in reserve models |
 | [insurance-causal-policy](https://github.com/burning-cost/insurance-causal-policy) | SDID causal evaluation of rate changes — separates genuine market trends from the effects of pricing actions |
 
->>>>>>> Stashed changes
