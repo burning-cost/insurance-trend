@@ -207,9 +207,8 @@ Run `benchmarks/benchmark.py` on Databricks to reproduce.
 
 ## Related Libraries
 
-| Library | What it does |
+| Library | Description |
 |---------|-------------|
-| [insurance-whittaker](https://github.com/burning-cost/insurance-whittaker) | Whittaker-Henderson graduation for development triangles — smooth the trends before forward projection |
-| [insurance-dynamics](https://github.com/burning-cost/insurance-dynamics) | Loss development models — trend projections inform the development assumptions in reserve models |
 | [insurance-causal-policy](https://github.com/burning-cost/insurance-causal-policy) | SDID causal evaluation of rate changes — separates genuine market trends from the effects of pricing actions |
-
+| [insurance-dynamics](https://github.com/burning-cost/insurance-dynamics) | Loss development models — trend projections inform the development assumptions in reserve models |
+| [insurance-whittaker](https://github.com/burning-cost/insurance-whittaker) | Whittaker-Henderson graduation for development triangles — smooth the trends before forward projection |
