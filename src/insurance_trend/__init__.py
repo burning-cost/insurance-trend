@@ -38,7 +38,7 @@ from .loss_cost import LossCostTrendFitter
 from .result import LossCostTrendResult, TrendResult
 from .severity import SeverityTrendFitter
 
-__version__ = "0.1.0"
+__version__ = "0.1.2"
 
 __all__ = [
     "FrequencyTrendFitter",
