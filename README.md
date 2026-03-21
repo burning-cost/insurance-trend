@@ -147,7 +147,7 @@ Both pandas and Polars DataFrames/Series are accepted as inputs. All outputs are
 ## Installation
 
 ```bash
-pip install insurance-trend
+uv add insurance-trend
 ```
 
 > 💬 Questions or feedback? Start a [Discussion](https://github.com/burning-cost/insurance-trend/discussions). Found it useful? A ⭐ helps others find it.
