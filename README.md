@@ -150,7 +150,7 @@ Both pandas and Polars DataFrames/Series are accepted as inputs. All outputs are
 uv add insurance-trend
 ```
 
-> 💬 Questions or feedback? Start a [Discussion](https://github.com/burning-cost/insurance-trend/discussions). Found it useful? A ⭐ helps others find it.
+> Questions or feedback? Start a [Discussion](https://github.com/burning-cost/insurance-trend/discussions). Found it useful? A star helps others find it.
 
 ## Dependencies
 
@@ -216,3 +216,7 @@ Run `benchmarks/benchmark.py` on Databricks to reproduce. The benchmark numbers 
 | [insurance-causal-policy](https://github.com/burning-cost/insurance-causal-policy) | SDID causal evaluation of rate changes — separates genuine market trends from the effects of pricing actions |
 | [insurance-dynamics](https://github.com/burning-cost/insurance-dynamics) | Loss development models — trend projections inform the development assumptions in reserve models |
 | [insurance-whittaker](https://github.com/burning-cost/insurance-whittaker) | Whittaker-Henderson graduation for development triangles — smooth the trends before forward projection |
+
+## Licence
+
+MIT. Part of the [Burning Cost](https://github.com/burning-cost) insurance pricing toolkit.
