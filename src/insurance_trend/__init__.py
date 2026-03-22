@@ -38,7 +38,12 @@ from .loss_cost import LossCostTrendFitter
 from .result import LossCostTrendResult, TrendResult
 from .severity import SeverityTrendFitter
 
-__version__ = "0.1.2"
+from importlib.metadata import version, PackageNotFoundError
+
+try:
+    __version__ = version("insurance-trend")
+except PackageNotFoundError:
+    __version__ = "0.0.0"  # not installed
 
 __all__ = [
     "FrequencyTrendFitter",
