@@ -5,6 +5,8 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/burning-cost/insurance-trend/blob/main/notebooks/quickstart.ipynb)
+
 Loss cost trend analysis for UK personal lines insurance pricing.
 
 Blog post: [Loss Cost Trend Analysis in Python](https://burning-cost.github.io/2026/03/09/insurance-trend.html)
