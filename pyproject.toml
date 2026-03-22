@@ -8,7 +8,7 @@ version = "0.1.2"
 description = "Loss cost trend analysis for UK personal lines insurance pricing"
 readme = "README.md"
 requires-python = ">=3.10"
-license = { text = "MIT" }
+license = "MIT"
 authors = [
     { name = "Burning Cost", email = "pricing.frontier@gmail.com" }
 ]
