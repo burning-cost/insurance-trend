@@ -262,3 +262,24 @@ class TestLossCostSummaryAndRepr:
         result = fitter.fit(detect_breaks=False)
         fig = result.plot()
         assert fig is not None
+
+    def test_periods_per_year_zero_raises(self, trending_data):
+        """periods_per_year=0 would cause ZeroDivisionError downstream."""
+        with pytest.raises(ValueError, match="periods_per_year"):
+            LossCostTrendFitter(
+                periods=trending_data["periods"],
+                claim_counts=trending_data["claim_counts"],
+                earned_exposure=trending_data["earned_exposure"],
+                total_paid=trending_data["total_paid"],
+                periods_per_year=0,
+            )
+
+    def test_periods_per_year_negative_raises(self, trending_data):
+        with pytest.raises(ValueError, match="periods_per_year"):
+            LossCostTrendFitter(
+                periods=trending_data["periods"],
+                claim_counts=trending_data["claim_counts"],
+                earned_exposure=trending_data["earned_exposure"],
+                total_paid=trending_data["total_paid"],
+                periods_per_year=-4,
+            )

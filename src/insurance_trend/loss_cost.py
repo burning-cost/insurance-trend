@@ -70,6 +70,11 @@ class LossCostTrendFitter:
         weights: Optional[PandasOrPolars] = None,
         periods_per_year: int = 4,
     ) -> None:
+        if periods_per_year <= 0:
+            raise ValueError(
+                f"periods_per_year must be a positive integer, got {periods_per_year!r}. "
+                "Use 4 for quarterly data or 12 for monthly data."
+            )
         validate_lengths(
             claim_counts=claim_counts,
             earned_exposure=earned_exposure,

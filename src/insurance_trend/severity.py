@@ -87,6 +87,11 @@ class SeverityTrendFitter:
         weights: Optional[PandasOrPolars] = None,
         periods_per_year: int = 4,
     ) -> None:
+        if periods_per_year <= 0:
+            raise ValueError(
+                f"periods_per_year must be a positive integer, got {periods_per_year!r}. "
+                "Use 4 for quarterly data or 12 for monthly data."
+            )
         validate_lengths(total_paid=total_paid, claim_counts=claim_counts)
         self._periods_raw = periods
         self._total_paid = to_numpy(total_paid, "total_paid")
@@ -171,6 +176,11 @@ class SeverityTrendFitter:
         TrendResult
             Trend fitted to (optionally deflated) severity.
         """
+        if not (0.0 < ci_level < 1.0):
+            raise ValueError(
+                f"ci_level must be strictly between 0 and 1, got {ci_level!r}. "
+                "Typical values: 0.90, 0.95, 0.99."
+            )
         # Compute index trend rate for superimposed inflation calculation
         if self._external_index is not None:
             self._index_trend_rate = self._compute_index_trend_rate()

@@ -463,3 +463,41 @@ class TestRegressionBugs:
             "Expected a warning about bootstrap cap at 200 for local_linear_trend. "
             f"Got: {warning_messages}"
         )
+
+    def test_periods_per_year_zero_raises(self, trending_data):
+        """periods_per_year=0 would cause ZeroDivisionError downstream."""
+        with pytest.raises(ValueError, match="periods_per_year"):
+            SeverityTrendFitter(
+                periods=trending_data["periods"],
+                total_paid=trending_data["total_paid"],
+                claim_counts=trending_data["claim_counts"],
+                periods_per_year=0,
+            )
+
+    def test_periods_per_year_negative_raises(self, trending_data):
+        with pytest.raises(ValueError, match="periods_per_year"):
+            SeverityTrendFitter(
+                periods=trending_data["periods"],
+                total_paid=trending_data["total_paid"],
+                claim_counts=trending_data["claim_counts"],
+                periods_per_year=-12,
+            )
+
+    def test_ci_level_invalid_raises(self, trending_data):
+        """ci_level outside (0, 1) must raise at fit() time."""
+        fitter = SeverityTrendFitter(
+            periods=trending_data["periods"],
+            total_paid=trending_data["total_paid"],
+            claim_counts=trending_data["claim_counts"],
+        )
+        with pytest.raises(ValueError, match="ci_level"):
+            fitter.fit(detect_breaks=False, ci_level=1.5)
+
+    def test_ci_level_zero_raises(self, trending_data):
+        fitter = SeverityTrendFitter(
+            periods=trending_data["periods"],
+            total_paid=trending_data["total_paid"],
+            claim_counts=trending_data["claim_counts"],
+        )
+        with pytest.raises(ValueError, match="ci_level"):
+            fitter.fit(detect_breaks=False, ci_level=0.0)

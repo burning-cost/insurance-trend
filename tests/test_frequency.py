@@ -359,3 +359,69 @@ class TestTrendResultMethods:
         result = fitter.fit(detect_breaks=False)
         fig = result.plot()
         assert fig is not None
+
+    def test_periods_per_year_zero_raises(self, trending_data):
+        """periods_per_year=0 causes ZeroDivisionError downstream — catch it early."""
+        with pytest.raises(ValueError, match="periods_per_year"):
+            FrequencyTrendFitter(
+                periods=trending_data["periods"],
+                claim_counts=trending_data["claim_counts"],
+                earned_exposure=trending_data["earned_exposure"],
+                periods_per_year=0,
+            )
+
+    def test_periods_per_year_negative_raises(self, trending_data):
+        with pytest.raises(ValueError, match="periods_per_year"):
+            FrequencyTrendFitter(
+                periods=trending_data["periods"],
+                claim_counts=trending_data["claim_counts"],
+                earned_exposure=trending_data["earned_exposure"],
+                periods_per_year=-4,
+            )
+
+    def test_periods_per_year_positive_does_not_raise(self, trending_data):
+        fitter = FrequencyTrendFitter(
+            periods=trending_data["periods"],
+            claim_counts=trending_data["claim_counts"],
+            earned_exposure=trending_data["earned_exposure"],
+            periods_per_year=12,
+        )
+        assert fitter._periods_per_year == 12
+
+    def test_ci_level_zero_raises(self, trending_data):
+        """ci_level=0 is not a valid confidence level."""
+        fitter = FrequencyTrendFitter(
+            periods=trending_data["periods"],
+            claim_counts=trending_data["claim_counts"],
+            earned_exposure=trending_data["earned_exposure"],
+        )
+        with pytest.raises(ValueError, match="ci_level"):
+            fitter.fit(detect_breaks=False, ci_level=0.0)
+
+    def test_ci_level_one_raises(self, trending_data):
+        """ci_level=1 is not a valid confidence level."""
+        fitter = FrequencyTrendFitter(
+            periods=trending_data["periods"],
+            claim_counts=trending_data["claim_counts"],
+            earned_exposure=trending_data["earned_exposure"],
+        )
+        with pytest.raises(ValueError, match="ci_level"):
+            fitter.fit(detect_breaks=False, ci_level=1.0)
+
+    def test_ci_level_negative_raises(self, trending_data):
+        fitter = FrequencyTrendFitter(
+            periods=trending_data["periods"],
+            claim_counts=trending_data["claim_counts"],
+            earned_exposure=trending_data["earned_exposure"],
+        )
+        with pytest.raises(ValueError, match="ci_level"):
+            fitter.fit(detect_breaks=False, ci_level=-0.5)
+
+    def test_ci_level_valid_does_not_raise(self, trending_data):
+        fitter = FrequencyTrendFitter(
+            periods=trending_data["periods"],
+            claim_counts=trending_data["claim_counts"],
+            earned_exposure=trending_data["earned_exposure"],
+        )
+        result = fitter.fit(detect_breaks=False, ci_level=0.90, n_bootstrap=50)
+        assert result is not None

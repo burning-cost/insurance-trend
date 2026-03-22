@@ -81,6 +81,11 @@ class FrequencyTrendFitter:
         weights: Optional[PandasOrPolars] = None,
         periods_per_year: int = 4,
     ) -> None:
+        if periods_per_year <= 0:
+            raise ValueError(
+                f"periods_per_year must be a positive integer, got {periods_per_year!r}. "
+                "Use 4 for quarterly data or 12 for monthly data."
+            )
         validate_lengths(
             claim_counts=claim_counts,
             earned_exposure=earned_exposure,
@@ -149,6 +154,11 @@ class FrequencyTrendFitter:
         -------
         TrendResult
         """
+        if not (0.0 < ci_level < 1.0):
+            raise ValueError(
+                f"ci_level must be strictly between 0 and 1, got {ci_level!r}. "
+                "Typical values: 0.90, 0.95, 0.99."
+            )
         if method == "log_linear":
             return self._fit_log_linear(
                 changepoints=changepoints,
