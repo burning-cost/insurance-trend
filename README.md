@@ -76,7 +76,7 @@ result = fitter.fit(
     seasonal=True,        # quarterly seasonal dummies
 )
 
-print(result.combined_trend_rate)  # e.g. 0.085 — 8.5% pa loss cost trend
+print(result.combined_trend_rate)  # e.g. 0.047 — 4.7% pa loss cost trend
 print(result.decompose())          # freq_trend, sev_trend, superimposed
 print(result.summary())
 ```
@@ -118,7 +118,9 @@ The local linear trend alternative (`method='local_linear_trend'`) uses statsmod
 
 ## Structural breaks
 
-The ruptures PELT algorithm runs on the log-transformed series. If a break is detected, the library warns and refits piecewise. The trend rate from the final segment is what gets reported — this is the defensible choice for projection, since you are projecting from the current regime.
+The ruptures PELT algorithm runs on the log-transformed series using an RBF (radial basis function) cost. If a break is detected, the library warns and refits piecewise. The trend rate from the final segment is what gets reported — this is the defensible choice for projection, since you are projecting from the current regime.
+
+The RBF cost is used rather than L2 because insurance log-trend series have non-zero within-segment slopes. PELT with L2 detects mean shifts and fails to detect breaks reliably when both segments are trending. RBF is sensitive to changes in the local distribution of the series, which correctly fires on step-changes like the COVID lockdown even in the presence of a recovery slope.
 
 Pass `changepoints=[8, 20]` to impose known breaks (e.g. 2020 Q1, 2025 Q1) rather than using auto-detection.
 
@@ -189,12 +191,14 @@ Benchmarked against a naive OLS baseline on synthetic UK motor data — 36 quart
 
 The naive OLS frequency estimate is approximately −8% pa because the −35% lockdown step-down at Q12 drags the entire fitted line downward. The library detects the break, discards the pre-break segment, and refits on Q12–Q36 only — recovering the true +3% pa recovery trend.
 
-**Break detection (36-quarter series, penalty=1.5):**
+**Break detection (36-quarter series, penalty=3.0, PELT RBF):**
 
 | Component | True break | Detected | Within ±2Q? |
 |-----------|-----------|---------|-------------|
-| Frequency | Q12 | Q12 | Yes |
-| Severity | Q20 | Q20 | Yes |
+| Frequency | Q12 | Q10 | Yes |
+| Severity | Q20 | Q20 | Yes (at penalty=1.5) |
+
+For frequency, the -35% step-change fires reliably at the default `penalty=3.0`. Severity breaks require lower penalty — use `penalty=1.5` for severity acceleration of 5–8 pp, or impose the break explicitly with `changepoints=`.
 
 **4-quarter forward projection MAPE:**
 
@@ -208,7 +212,7 @@ The projection MAPE improvement of ~20 pp reflects that naive OLS extrapolates f
 
 **Penalty parameter guidance:**
 
-The `penalty` parameter controls PELT's sensitivity. Lower values detect more (and smaller) breaks; higher values require a larger signal. For large breaks (>15pp step-change, as in COVID lockdown), `penalty=1.5` reliably fires. For smaller breaks, reduce further or use `changepoints=` to impose known dates. The default `penalty=2.0` is conservative — if you know there was a structural event (Ogden rate change, lockdown), impose it explicitly rather than relying on auto-detection.
+The `penalty` parameter controls PELT's sensitivity. Lower values detect more (and smaller) breaks; higher values require a larger signal. The default `penalty=3.0` reliably fires on large breaks (>20pp step-change, as in COVID lockdown). For smaller breaks, reduce to 1.5 or use `changepoints=` to impose known dates — if you know there was a structural event (Ogden rate change, lockdown), impose it explicitly rather than relying on auto-detection.
 
 Run `benchmarks/benchmark.py` on Databricks to reproduce. The benchmark numbers above are indicative; exact values depend on the random seed and the PELT detection result.
 

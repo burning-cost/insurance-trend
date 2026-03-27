@@ -19,8 +19,13 @@ def detect_breakpoints(
 ) -> list[int]:
     """Detect structural break points in a log-transformed trend series.
 
-    Uses the Pruned Exact Linear Time (PELT) algorithm with an L2 cost function.
-    Returns integer indices at which the series changes slope.
+    Uses the Pruned Exact Linear Time (PELT) algorithm with a radial basis
+    function (RBF) cost. RBF is appropriate for insurance trend series because
+    the log-series typically has a non-zero slope within each segment — PELT
+    with the L2 (constant-mean) cost fails to detect breaks reliably when the
+    series has a strong within-segment trend.
+
+    Returns integer indices at which the series regime changes.
 
     Parameters
     ----------
@@ -30,13 +35,15 @@ def detect_breakpoints(
     penalty:
         Penalty parameter for the PELT algorithm. Higher values produce fewer
         breaks. Default of 3.0 is a reasonable starting point for quarterly
-        insurance data; reduce to 1.5 to increase sensitivity.
+        insurance data. For large step-changes (COVID lockdown magnitude,
+        Ogden rate change) the break should fire at 3.0. Reduce to 1.5 to
+        detect smaller shifts, or use ``changepoints=`` to impose known dates.
     min_size:
         Minimum number of observations in each segment. Prevents the algorithm
         from detecting breaks with too few data points on either side.
     max_breaks:
         Maximum number of breakpoints to return. If the algorithm detects more,
-        only the top ``max_breaks`` (by signal contrast) are returned.
+        only the first ``max_breaks`` are returned.
 
     Returns
     -------
@@ -51,6 +58,15 @@ def detect_breakpoints(
 
     The returned list excludes the implicit final breakpoint (length of series)
     that ruptures always appends.
+
+    Why RBF over L2:
+        PELT with ``model="l2"`` detects shifts in the *mean* level. For a
+        log-frequency series with a +3% pa within-segment slope, the pre- and
+        post-break means can overlap even when the step-change is large,
+        causing the L2 model to miss the break entirely. The RBF kernel is
+        sensitive to changes in the local distribution shape and reliably
+        detects the kind of -35% level shifts seen in UK motor frequency
+        during the 2020 COVID lockdown.
     """
     try:
         import ruptures as rpt
@@ -68,7 +84,7 @@ def detect_breakpoints(
     signal = log_series.reshape(-1, 1)
 
     try:
-        algo = rpt.Pelt(model="l2", min_size=min_size).fit(signal)
+        algo = rpt.Pelt(model="rbf", min_size=min_size).fit(signal)
         raw_breaks = algo.predict(pen=penalty)
     except Exception as exc:  # noqa: BLE001
         warnings.warn(
