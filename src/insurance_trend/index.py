@@ -5,13 +5,19 @@ Supports:
 - User-supplied CSV files (for BCIS and other subscription data)
 - Direct Series input
 
-The ONS API returns data at two distinct endpoints depending on the publication:
+The ONS API returns data at distinct endpoints depending on the publication:
 
     MM23 (CPI/RPI):
         https://www.ons.gov.uk/economy/inflationandpriceindices/timeseries/{CODE}/mm23/data
 
     SPPI (Services Producer Price Index):
         https://www.ons.gov.uk/economy/inflationandpriceindices/timeseries/{CODE}/sppi/data
+
+    AWE (Average Weekly Earnings, labour market):
+        https://www.ons.gov.uk/employmentandlabourmarket/peopleinwork/earningsandworkinghours/timeseries/{CODE}/emp/data
+
+The class routes each series code to the correct endpoint automatically based on
+``_SPPI_CODES`` and ``_AWE_CODES``.
 
 The response contains a ``months`` and/or ``quarters`` array. This module
 parses both, converts to a Polars Series indexed by period label, and
@@ -63,6 +69,15 @@ _SPPI_CODES: frozenset[str] = frozenset({"HPTH", "HPTD"})
 _ONS_MM23_URL = "https://www.ons.gov.uk/economy/inflationandpriceindices/timeseries/{code}/mm23/data"
 _ONS_SPPI_URL = "https://www.ons.gov.uk/economy/inflationandpriceindices/timeseries/{code}/sppi/data"
 
+# AWE (Average Weekly Earnings) series are published under the labour market /emp/ dataset,
+# not the inflation /mm23/ dataset. Routing these to /mm23/ returns an empty response.
+_AWE_CODES: frozenset[str] = frozenset({"KAB9", "KAC3"})
+_ONS_AWE_URL = (
+    "https://www.ons.gov.uk/employmentandlabourmarket"
+    "/peopleinwork/earningsandworkinghours"
+    "/timeseries/{code}/emp/data"
+)
+
 # Default connect/read timeout in seconds for ONS API calls
 _DEFAULT_TIMEOUT = 30
 
@@ -70,9 +85,10 @@ _DEFAULT_TIMEOUT = 30
 def _ons_url_for(code: str) -> str:
     """Return the correct ONS API URL for the given series code.
 
-    SPPI series codes are published under a different dataset path from the
-    main MM23 CPI/RPI dataset. Sending an SPPI code to /mm23/data returns
-    either a 404 or an empty data payload.
+    Routing:
+    - SPPI series (HPTH, HPTD): ``/sppi/data`` endpoint
+    - AWE series (KAB9, KAC3): ``/emp/data`` endpoint under the labour market path
+    - All others: ``/mm23/data`` endpoint
 
     Parameters
     ----------
@@ -86,6 +102,8 @@ def _ons_url_for(code: str) -> str:
     """
     if code in _SPPI_CODES:
         return _ONS_SPPI_URL.format(code=code)
+    if code in _AWE_CODES:
+        return _ONS_AWE_URL.format(code=code)
     return _ONS_MM23_URL.format(code=code)
 
 

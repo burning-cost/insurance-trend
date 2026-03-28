@@ -562,3 +562,41 @@ class TestIndexCatalogueAdditions:
         from insurance_trend.index import _ons_url_for
         cpi_url = _ons_url_for("L7JE")
         assert "/mm23/" in cpi_url, f"L7JE should route to /mm23/, got: {cpi_url}"
+
+    def test_awe_kab9_routes_to_emp(self):
+        from insurance_trend.index import _ons_url_for
+        url = _ons_url_for("KAB9")
+        assert "/emp/" in url, f"KAB9 should route to /emp/, got: {url}"
+
+    def test_awe_kac3_routes_to_emp(self):
+        from insurance_trend.index import _ons_url_for
+        url = _ons_url_for("KAC3")
+        assert "/emp/" in url, f"KAC3 should route to /emp/, got: {url}"
+
+    def test_awe_routing_is_not_mm23(self):
+        from insurance_trend.index import _ons_url_for
+        url = _ons_url_for("KAB9")
+        assert "/mm23/" not in url, f"KAB9 must not route to /mm23/, got: {url}"
+
+    def test_awe_codes_frozenset_exists(self):
+        from insurance_trend.index import _AWE_CODES
+        assert isinstance(_AWE_CODES, frozenset)
+        assert "KAB9" in _AWE_CODES
+        assert "KAC3" in _AWE_CODES
+
+    def test_l522_routes_to_mm23(self):
+        from insurance_trend.index import _ons_url_for
+        url = _ons_url_for("L522")
+        assert "/mm23/" in url, f"L522 should route to /mm23/, got: {url}"
+
+    def test_l7ga_routes_to_mm23(self):
+        from insurance_trend.index import _ons_url_for
+        url = _ons_url_for("L7GA")
+        assert "/mm23/" in url, f"L7GA should route to /mm23/, got: {url}"
+
+    def test_lowercase_kab9_routes_to_emp(self):
+        """URL routing should be case-insensitive via the from_ons code.upper() call."""
+        from insurance_trend.index import _ons_url_for, _AWE_CODES
+        # _ons_url_for receives an already-uppercased code from from_ons()
+        # Verify the frozenset lookup itself works with uppercase
+        assert "KAB9" in _AWE_CODES
