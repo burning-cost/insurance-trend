@@ -34,7 +34,6 @@ from ._utils import (
     annual_trend_rate,
     safe_log,
     to_numpy,
-    validate_lengths,
 )
 
 
@@ -272,7 +271,6 @@ class MultiIndexDecomposer:
             ols_result = sm.OLS(log_sev, X).fit()
 
         # params[0] is the intercept; params[1:] are index elasticities
-        intercept = float(ols_result.params[0])
         elasticities: dict[str, float] = {}
         for i, name in enumerate(self._index_names):
             elasticities[name] = float(ols_result.params[i + 1])
