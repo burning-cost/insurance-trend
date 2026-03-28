@@ -20,12 +20,25 @@ def detect_breakpoints(
     """Detect structural break points in a log-transformed trend series.
 
     Uses the Pruned Exact Linear Time (PELT) algorithm with a radial basis
-    function (RBF) cost. RBF is appropriate for insurance trend series because
-    the log-series typically has a non-zero slope within each segment — PELT
-    with the L2 (constant-mean) cost fails to detect breaks reliably when the
-    series has a strong within-segment trend.
+    function (RBF) cost applied to the *detrended* residuals of the input
+    series. Detrending is critical: without it, RBF sees the steadily
+    increasing values of a clean linear trend as a distributional shift and
+    fires spurious breaks.
 
-    Returns integer indices at which the series regime changes.
+    The workflow is:
+    1. Fit a global OLS linear trend: ``y_hat = a + b*t``.
+    2. Compute residuals: ``e = log_series - y_hat``.
+    3. Run PELT+RBF on the residuals.
+
+    A clean linear trend has near-zero residuals, so PELT will not fire.  A
+    genuine level shift appears as a step in the residuals and is reliably
+    detected.
+
+    RBF is still preferred over L2 (mean-shift) on residuals because
+    insurance log-frequency residuals are typically not zero-mean within each
+    segment — there is often a modest within-segment slope remaining after the
+    global trend is removed.  RBF's sensitivity to distributional shape catches
+    these shifts more reliably than L2.
 
     Parameters
     ----------
@@ -59,7 +72,17 @@ def detect_breakpoints(
     The returned list excludes the implicit final breakpoint (length of series)
     that ruptures always appends.
 
-    Why RBF over L2:
+    Why detrend before PELT?
+        PELT with RBF is sensitive to changes in the local distribution, not
+        just the mean. A clean linear ramp ``0.02 * t`` has steadily increasing
+        values in the first half versus the second half — RBF reads this as a
+        distributional shift and fires a spurious break even at moderate
+        penalties. By removing the global linear trend first, the input to PELT
+        is a residual series centred near zero, and a linear trend produces
+        residuals that are near-zero everywhere. Only genuine level shifts or
+        slope changes produce large residuals that trigger breaks.
+
+    Why RBF over L2 on the residuals?
         PELT with ``model="l2"`` detects shifts in the *mean* level. For a
         log-frequency series with a +3% pa within-segment slope, the pre- and
         post-break means can overlap even when the step-change is large,
@@ -80,8 +103,19 @@ def detect_breakpoints(
     if n < 2 * min_size:
         return []
 
+    # Detrend: remove a global OLS linear trend before running PELT.
+    # Without this, RBF fires on the steadily increasing values of a linear
+    # series because the left-half distribution differs from the right-half
+    # distribution even when there is no structural break.
+    t = np.arange(n, dtype=float)
+    # OLS fit: [1, t] design matrix
+    A = np.column_stack([np.ones(n), t])
+    coeffs, _, _, _ = np.linalg.lstsq(A, log_series, rcond=None)
+    trend = A @ coeffs
+    residuals = log_series - trend
+
     # PELT requires a 2-D array
-    signal = log_series.reshape(-1, 1)
+    signal = residuals.reshape(-1, 1)
 
     try:
         algo = rpt.Pelt(model="rbf", min_size=min_size).fit(signal)
