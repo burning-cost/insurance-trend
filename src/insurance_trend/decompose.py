@@ -335,9 +335,12 @@ class MultiIndexDecomposer:
             annual_contributions[n] * 100.0 for n in self._index_names
         ] + [residual_rate * 100.0]
 
-        # Share of total trend (signed: negative share possible if residual < 0)
+        # Share of total trend (signed: negative share possible if residual < 0).
+        # Computed from decimal rates (not the pct-scaled contrib_pct_col) to
+        # avoid a factor-of-100 error.
+        decimal_contribs = [annual_contributions[n] for n in self._index_names] + [residual_rate]
         if abs(total_severity_trend) > 1e-10:
-            share_col = [c / total_severity_trend * 100.0 for c in contrib_pct_col]
+            share_col = [c / total_severity_trend * 100.0 for c in decimal_contribs]
         else:
             share_col = [float("nan")] * len(components)
 
