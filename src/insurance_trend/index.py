@@ -5,8 +5,13 @@ Supports:
 - User-supplied CSV files (for BCIS and other subscription data)
 - Direct Series input
 
-The ONS API returns a JSON response at:
-    https://www.ons.gov.uk/economy/inflationandpriceindices/timeseries/{CODE}/mm23/data
+The ONS API returns data at two distinct endpoints depending on the publication:
+
+    MM23 (CPI/RPI):
+        https://www.ons.gov.uk/economy/inflationandpriceindices/timeseries/{CODE}/mm23/data
+
+    SPPI (Services Producer Price Index):
+        https://www.ons.gov.uk/economy/inflationandpriceindices/timeseries/{CODE}/sppi/data
 
 The response contains a ``months`` and/or ``quarters`` array. This module
 parses both, converts to a Polars Series indexed by period label, and
@@ -25,19 +30,63 @@ import polars as pl
 import requests
 
 
-# Catalogue of UK insurance-relevant ONS series codes
+# Catalogue of UK insurance-relevant ONS series codes.
+# Format: human-readable name -> ONS series code.
 _CATALOGUE: dict[str, str] = {
+    # SPPI — Services Producer Price Index (motor/property repair)
     "motor_repair": "HPTH",           # SPPI G4520 Maintenance & repair of motor vehicles
+    "motor_repair_parts": "HPTD",     # SPPI G4520 Parts component only
+    # CPI — Consumer Price Index sub-indices
     "motor_insurance_cpi": "L7JE",    # CPI 12.5.4.1 Motor vehicle insurance
+    "used_cars_cpi": "L7JD",          # CPI 07.1.2 Second-hand cars
+    "new_cars_cpi": "L7JC",           # CPI 07.1.1 New cars
+    "vehicle_fuels_cpi": "L7JF",      # CPI 07.2.2 Fuels and lubricants
+    # RPI — Retail Price Index
     "vehicle_maintenance_rpi": "CZEA",# RPI Maintenance of motor vehicles
+    # Property/household
     "building_maintenance": "D7DO",   # CPI 04.3.2 Services for maintenance & repair of dwellings
     "household_maintenance_weights": "CJVD",  # CPI Weights 04.3 Maintenance & repair
+    # Earnings / labour costs
+    "avg_weekly_earnings": "KAB9",    # AWE Total pay, whole economy
+    "avg_weekly_earnings_priv": "KAC3",  # AWE Total pay, private sector
+    # Wider economy
+    "cpi_all_items": "L55O",          # CPI All Items
+    "rpi_all_items": "CZBH",          # RPI All Items
+    "services_ppi": "L522",           # PPI Output — services
+    "ppi_output_all": "L7GA",         # PPI Output — all manufactured products
 }
 
-_ONS_BASE_URL = "https://www.ons.gov.uk/economy/inflationandpriceindices/timeseries/{code}/mm23/data"
+# Series codes that are published under the SPPI endpoint rather than MM23.
+# Misrouting these codes to /mm23/data returns a 404 or empty response.
+_SPPI_CODES: frozenset[str] = frozenset({"HPTH", "HPTD"})
+
+_ONS_MM23_URL = "https://www.ons.gov.uk/economy/inflationandpriceindices/timeseries/{code}/mm23/data"
+_ONS_SPPI_URL = "https://www.ons.gov.uk/economy/inflationandpriceindices/timeseries/{code}/sppi/data"
 
 # Default connect/read timeout in seconds for ONS API calls
 _DEFAULT_TIMEOUT = 30
+
+
+def _ons_url_for(code: str) -> str:
+    """Return the correct ONS API URL for the given series code.
+
+    SPPI series codes are published under a different dataset path from the
+    main MM23 CPI/RPI dataset. Sending an SPPI code to /mm23/data returns
+    either a 404 or an empty data payload.
+
+    Parameters
+    ----------
+    code:
+        ONS series identifier (uppercase).
+
+    Returns
+    -------
+    str
+        Full URL for the series' data endpoint.
+    """
+    if code in _SPPI_CODES:
+        return _ONS_SPPI_URL.format(code=code)
+    return _ONS_MM23_URL.format(code=code)
 
 
 class ExternalIndex:
@@ -107,6 +156,10 @@ class ExternalIndex:
         or month label from the ONS response. Values are sorted chronologically
         and filtered to ``start_date`` or later.
 
+        Routing is handled automatically: SPPI series (e.g. HPTH, HPTD) are
+        fetched from the ``/sppi/data`` endpoint; all other series use
+        ``/mm23/data``.
+
         Parameters
         ----------
         series_code:
@@ -138,7 +191,7 @@ class ExternalIndex:
             If no data matching ``frequency`` is found in the response.
         """
         code = series_code.upper()
-        url = _ONS_BASE_URL.format(code=code)
+        url = _ons_url_for(code)
 
         # Load from cache if available
         if cache_path and Path(cache_path).exists():

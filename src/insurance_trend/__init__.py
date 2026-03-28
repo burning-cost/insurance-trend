@@ -1,6 +1,6 @@
 """insurance-trend: Loss cost trend analysis for UK personal lines insurance pricing.
 
-The library provides four main classes:
+The library provides five main classes:
 
 - :class:`FrequencyTrendFitter` — log-linear trend fitting for claim frequency
   (claims per unit of exposure).
@@ -11,10 +11,13 @@ The library provides four main classes:
   :meth:`~LossCostTrendFitter.decompose` and projected loss cost.
 - :class:`ExternalIndex` — ONS API fetcher and CSV loader, with a catalogue of
   UK insurance-relevant ONS series codes.
+- :class:`MultiIndexDecomposer` — decompose severity trend across multiple
+  external indices simultaneously, attributing each portion to a named index
+  and isolating the residual superimposed inflation.
 
-Results are returned as :class:`TrendResult` or :class:`LossCostTrendResult`
-dataclasses. All outputs use Polars DataFrames/Series. Both pandas and Polars
-inputs are accepted.
+Results are returned as :class:`TrendResult`, :class:`LossCostTrendResult`, or
+:class:`MultiIndexResult` dataclasses. All outputs use Polars DataFrames/Series.
+Both pandas and Polars inputs are accepted.
 
 Quick start::
 
@@ -32,6 +35,7 @@ Quick start::
     print(result.decompose())
 """
 
+from .decompose import MultiIndexDecomposer, MultiIndexResult, UK_INSURANCE_EVENTS
 from .frequency import FrequencyTrendFitter
 from .index import ExternalIndex
 from .loss_cost import LossCostTrendFitter
@@ -50,6 +54,9 @@ __all__ = [
     "SeverityTrendFitter",
     "LossCostTrendFitter",
     "ExternalIndex",
+    "MultiIndexDecomposer",
+    "MultiIndexResult",
+    "UK_INSURANCE_EVENTS",
     "TrendResult",
     "LossCostTrendResult",
     "__version__",
