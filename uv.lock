@@ -510,7 +510,7 @@ wheels = [
 
 [[package]]
 name = "insurance-trend"
-version = "0.1.2"
+version = "0.1.5"
 source = { editable = "." }
 dependencies = [
     { name = "matplotlib" },
@@ -536,7 +536,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "matplotlib", specifier = ">=3.6" },
-    { name = "numpy", specifier = ">=1.24" },
+    { name = "numpy", specifier = ">=1.25" },
     { name = "pandas", specifier = ">=2.0" },
     { name = "polars", specifier = ">=1.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=7.0" },

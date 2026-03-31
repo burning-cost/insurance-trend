@@ -1,6 +1,6 @@
 """insurance-trend: Loss cost trend analysis for UK personal lines insurance pricing.
 
-The library provides five main classes:
+The library provides six main classes:
 
 - :class:`FrequencyTrendFitter` — log-linear trend fitting for claim frequency
   (claims per unit of exposure).
@@ -14,10 +14,15 @@ The library provides five main classes:
 - :class:`MultiIndexDecomposer` — decompose severity trend across multiple
   external indices simultaneously, attributing each portion to a named index
   and isolating the residual superimposed inflation.
+- :class:`InflationDecomposer` — Harvey structural time series decomposition of
+  claims inflation into structural trend, stochastic cycle, seasonal, and
+  irregular components. Uses statsmodels UnobservedComponents via the Kalman
+  filter and smoother.
 
-Results are returned as :class:`TrendResult`, :class:`LossCostTrendResult`, or
-:class:`MultiIndexResult` dataclasses. All outputs use Polars DataFrames/Series.
-Both pandas and Polars inputs are accepted.
+Results are returned as :class:`TrendResult`, :class:`LossCostTrendResult`,
+:class:`MultiIndexResult`, or :class:`InflationDecompositionResult` dataclasses.
+All outputs use Polars DataFrames/Series. Both pandas and Polars inputs are
+accepted.
 
 Quick start::
 
@@ -38,6 +43,7 @@ Quick start::
 from .decompose import MultiIndexDecomposer, MultiIndexResult, UK_INSURANCE_EVENTS
 from .frequency import FrequencyTrendFitter
 from .index import ExternalIndex
+from .inflation import InflationDecomposer, InflationDecompositionResult
 from .loss_cost import LossCostTrendFitter
 from .result import LossCostTrendResult, TrendResult
 from .severity import SeverityTrendFitter
@@ -57,6 +63,8 @@ __all__ = [
     "MultiIndexDecomposer",
     "MultiIndexResult",
     "UK_INSURANCE_EVENTS",
+    "InflationDecomposer",
+    "InflationDecompositionResult",
     "TrendResult",
     "LossCostTrendResult",
     "__version__",
