@@ -1,5 +1,41 @@
 # Changelog
 
+## [0.1.6] - 2026-04-01
+
+### Added
+- `BreakEventCalendar`: new Phase 3 class for attributing detected structural
+  breaks to known UK insurance market events. Ships with a built-in calendar of
+  22 major UK personal lines events covering Ogden rate changes (2017, 2019),
+  IPT rises (2015, 2016, 2017), COVID lockdowns (2020Q1, 2021Q1) and
+  post-lockdown bounce, Civil Liability Act whiplash tariff (2021Q2), GIPP
+  dual pricing ban (2022Q1), semiconductor supply chain shock (2021Q3), FCA
+  Consumer Duty (2023Q3), and more.
+- `CalendarEvent`: frozen dataclass holding a single registry entry (period,
+  description, category, impact direction, optional source citation).
+- `BreakAttribution`: result dataclass for a single break → event match.
+- `AttributionReport`: full attribution result with `summary()` and
+  `to_dataframe()` helpers.
+- `BreakEventCalendar.attribute()`: match a list of break period strings to
+  calendar events within a configurable tolerance window.
+- `BreakEventCalendar.attribute_indices()`: convenience wrapper for integer
+  break indices returned by `detect_breakpoints()`.
+- `BreakEventCalendar.filter_events()`: return a sub-calendar filtered by
+  category, impact, and/or date range.
+- `BreakEventCalendar.events_dataframe()`: export all events as a Polars
+  DataFrame.
+
+
+## [0.1.5] - 2026-03-31
+
+### Added
+- `InflationDecomposer`: Harvey structural time series decomposition of claims
+  inflation into structural trend, stochastic cycle, seasonal, and irregular
+  components using statsmodels UnobservedComponents (Kalman filter/smoother).
+- `InflationDecompositionResult` dataclass with `summary()`, `decomposition_table()`,
+  and `plot()` helpers.
+- Databricks demo notebook: `notebooks/demo_inflation_decomposer.py`.
+
+
 ## [0.1.4] - 2026-03-27
 
 ### Fixed

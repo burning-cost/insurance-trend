@@ -1,6 +1,6 @@
 """insurance-trend: Loss cost trend analysis for UK personal lines insurance pricing.
 
-The library provides six main classes:
+The library provides seven main classes:
 
 - :class:`FrequencyTrendFitter` — log-linear trend fitting for claim frequency
   (claims per unit of exposure).
@@ -18,11 +18,15 @@ The library provides six main classes:
   claims inflation into structural trend, stochastic cycle, seasonal, and
   irregular components. Uses statsmodels UnobservedComponents via the Kalman
   filter and smoother.
+- :class:`BreakEventCalendar` — map detected structural break dates to known UK
+  insurance market events (Ogden rate changes, IPT rises, GIPP, COVID lockdowns,
+  whiplash reforms, supply chain shocks). Returns an :class:`AttributionReport`
+  explaining which breaks are explained by known events and which are unexplained.
 
 Results are returned as :class:`TrendResult`, :class:`LossCostTrendResult`,
-:class:`MultiIndexResult`, or :class:`InflationDecompositionResult` dataclasses.
-All outputs use Polars DataFrames/Series. Both pandas and Polars inputs are
-accepted.
+:class:`MultiIndexResult`, :class:`InflationDecompositionResult`, or
+:class:`AttributionReport` dataclasses. All outputs use Polars DataFrames/Series.
+Both pandas and Polars inputs are accepted.
 
 Quick start::
 
@@ -40,6 +44,12 @@ Quick start::
     print(result.decompose())
 """
 
+from .calendar import (
+    AttributionReport,
+    BreakAttribution,
+    BreakEventCalendar,
+    CalendarEvent,
+)
 from .decompose import MultiIndexDecomposer, MultiIndexResult, UK_INSURANCE_EVENTS
 from .frequency import FrequencyTrendFitter
 from .index import ExternalIndex
@@ -65,6 +75,10 @@ __all__ = [
     "UK_INSURANCE_EVENTS",
     "InflationDecomposer",
     "InflationDecompositionResult",
+    "BreakEventCalendar",
+    "BreakAttribution",
+    "AttributionReport",
+    "CalendarEvent",
     "TrendResult",
     "LossCostTrendResult",
     "__version__",
