@@ -54,7 +54,12 @@ def periods_to_index(periods: PandasOrPolars) -> np.ndarray:
         vals = np.asarray(periods)
 
     # If already numeric, return as integer index
-    if np.issubdtype(vals.dtype, np.number):
+    try:
+        is_numeric = np.issubdtype(vals.dtype, np.number)
+    except TypeError:
+        # pandas StringDtype etc. are not interpretable by numpy
+        is_numeric = False
+    if is_numeric:
         return np.arange(len(vals), dtype=float)
 
     # Otherwise treat as ordered categories, return ordinal positions
